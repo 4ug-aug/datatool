@@ -105,10 +105,19 @@ export function LeftSidebar() {
   };
 
   const handleTableSelect = (table: TableInfo) => {
-    // Set the selected table first, then prepare the view state
-    // This ensures the query fetches data for the new table
+    // Only clear data if selecting a different table
+    const isDifferentTable =
+      !selectedTable ||
+      selectedTable.schema !== table.schema ||
+      selectedTable.name !== table.name;
+
+    // Set the selected table first
     setSelectedTable({ schema: table.schema, name: table.name });
-    prepareForTableView();
+
+    // Only prepare for new table view if it's a different table
+    if (isDifferentTable) {
+      prepareForTableView();
+    }
   };
 
   const handleConnect = (connectionId: string) => {

@@ -18,6 +18,7 @@ import {
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   ChevronLeft,
   ChevronRight,
@@ -26,11 +27,14 @@ import {
   Database,
   Rows3,
   AlertCircle,
+  TableIcon,
+  BarChart3,
 } from "lucide-react";
 import { useQueryStore } from "@/stores/queryStore";
 import { useConnectionStore } from "@/stores/connectionStore";
 import { useTableData } from "@/hooks/queries/useTables";
 import { ExplainVisualizer } from "@/components/editor/ExplainVisualizer";
+import { DataVisualizer } from "@/components/chart/DataVisualizer";
 
 export function MainContent() {
   const resultMode = useQueryStore((s) => s.resultMode);
@@ -43,6 +47,8 @@ export function MainContent() {
   const setPageSize = useQueryStore((s) => s.setPageSize);
   const isExecuting = useQueryStore((s) => s.isExecuting);
   const error = useQueryStore((s) => s.error);
+  const showChart = useQueryStore((s) => s.showChart);
+  const setShowChart = useQueryStore((s) => s.setShowChart);
 
   const selectedTable = useConnectionStore((s) => s.selectedTable);
   const isConnected = useConnectionStore((s) => s.isConnected);
@@ -188,6 +194,33 @@ export function MainContent() {
       {/* Header with info */}
       <div className="flex items-center justify-between border-b border-border px-4 py-2">
         <div className="flex items-center gap-4">
+          {/* View toggle */}
+          <ToggleGroup
+            type="single"
+            value={showChart ? "chart" : "table"}
+            onValueChange={(value) => {
+              if (value) setShowChart(value === "chart");
+            }}
+            className="bg-muted/50 p-0.5 rounded-md"
+          >
+            <ToggleGroupItem
+              value="table"
+              aria-label="Table view"
+              className="h-7 px-2.5 data-[state=on]:bg-background"
+            >
+              <TableIcon className="size-3.5 mr-1.5" />
+              <span className="text-xs">Table</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="chart"
+              aria-label="Chart view"
+              className="h-7 px-2.5 data-[state=on]:bg-background"
+            >
+              <BarChart3 className="size-3.5 mr-1.5" />
+              <span className="text-xs">Chart</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+
           {selectedTable && resultMode === "table" && (
             <span className="text-sm font-medium text-foreground">
               {selectedTable.schema}.{selectedTable.name}
@@ -204,8 +237,8 @@ export function MainContent() {
           </Badge>
         </div>
 
-        {/* Pagination controls */}
-        {displayData.isPaginated && (
+        {/* Pagination controls - only show for table view */}
+        {displayData.isPaginated && !showChart && (
           <div className="flex items-center gap-2">
             <Select
               value={String(pageSize)}
@@ -267,43 +300,48 @@ export function MainContent() {
         )}
       </div>
 
-      {/* Data table */}
-      <ScrollArea className="flex-1">
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              {displayData.columns.map((col, i) => (
-                <TableHead
-                  key={i}
-                  className="sticky top-0 z-10 whitespace-nowrap bg-muted/50 font-mono text-xs backdrop-blur"
-                >
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-semibold">{col.name}</span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {col.data_type}
-                    </span>
-                  </div>
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {displayData.rows.map((row, rowIndex) => (
-              <TableRow key={rowIndex}>
-                {(row as unknown[]).map((cell, cellIndex) => (
-                  <TableCell
-                    key={cellIndex}
-                    className={`whitespace-nowrap font-mono text-xs ${getCellClassName(cell)}`}
+      {/* Chart view */}
+      {showChart ? (
+        <DataVisualizer columns={displayData.columns} rows={displayData.rows} />
+      ) : (
+        /* Data table */
+        <ScrollArea className="flex-1">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                {displayData.columns.map((col, i) => (
+                  <TableHead
+                    key={i}
+                    className="sticky top-0 z-10 whitespace-nowrap bg-muted/50 font-mono text-xs backdrop-blur"
                   >
-                    {formatCellValue(cell)}
-                  </TableCell>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-semibold">{col.name}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {col.data_type}
+                      </span>
+                    </div>
+                  </TableHead>
                 ))}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+            </TableHeader>
+            <TableBody>
+              {displayData.rows.map((row, rowIndex) => (
+                <TableRow key={rowIndex}>
+                  {(row as unknown[]).map((cell, cellIndex) => (
+                    <TableCell
+                      key={cellIndex}
+                      className={`whitespace-nowrap font-mono text-xs ${getCellClassName(cell)}`}
+                    >
+                      {formatCellValue(cell)}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      )}
     </div>
   );
 }

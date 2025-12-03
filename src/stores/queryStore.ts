@@ -3,6 +3,14 @@ import type { QueryResult, PaginatedResult, ExplainResult } from "@/types";
 
 type ResultMode = "table" | "query" | "explain";
 
+export type ChartType = "bar" | "line" | "area" | "pie";
+
+export interface ChartConfig {
+  chartType: ChartType;
+  xAxisColumn: string | null;
+  yAxisColumns: string[];
+}
+
 interface QueryState {
   // SQL Editor content
   sql: string;
@@ -50,6 +58,13 @@ interface QueryState {
   // Left sidebar collapsed state
   isLeftSidebarOpen: boolean;
   setIsLeftSidebarOpen: (open: boolean) => void;
+
+  // Chart visualization
+  showChart: boolean;
+  setShowChart: (show: boolean) => void;
+  chartConfig: ChartConfig;
+  setChartConfig: (config: Partial<ChartConfig>) => void;
+  resetChartConfig: () => void;
 }
 
 export const useQueryStore = create<QueryState>((set) => ({
@@ -99,5 +114,26 @@ export const useQueryStore = create<QueryState>((set) => ({
   setIsRightSidebarOpen: (open) => set({ isRightSidebarOpen: open }),
   isLeftSidebarOpen: true,
   setIsLeftSidebarOpen: (open) => set({ isLeftSidebarOpen: open }),
+
+  // Chart visualization
+  showChart: false,
+  setShowChart: (show) => set({ showChart: show }),
+  chartConfig: {
+    chartType: "bar",
+    xAxisColumn: null,
+    yAxisColumns: [],
+  },
+  setChartConfig: (config) =>
+    set((state) => ({
+      chartConfig: { ...state.chartConfig, ...config },
+    })),
+  resetChartConfig: () =>
+    set({
+      chartConfig: {
+        chartType: "bar",
+        xAxisColumn: null,
+        yAxisColumns: [],
+      },
+    }),
 }));
 
