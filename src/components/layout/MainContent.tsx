@@ -1,4 +1,16 @@
-import { useMemo } from "react";
+import { DataVisualizer } from "@/components/chart/DataVisualizer";
+import { ExplainVisualizer } from "@/components/editor/ExplainVisualizer";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -7,34 +19,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useTableData } from "@/hooks/queries/useTables";
+import { useConnectionStore } from "@/stores/connectionStore";
+import { useQueryStore } from "@/stores/queryStore";
 import {
+  AlertCircle,
+  BarChart3,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
   Database,
   Rows3,
-  AlertCircle,
   TableIcon,
-  BarChart3,
 } from "lucide-react";
-import { useQueryStore } from "@/stores/queryStore";
-import { useConnectionStore } from "@/stores/connectionStore";
-import { useTableData } from "@/hooks/queries/useTables";
-import { ExplainVisualizer } from "@/components/editor/ExplainVisualizer";
-import { DataVisualizer } from "@/components/chart/DataVisualizer";
+import { useMemo } from "react";
 
 export function MainContent() {
   const resultMode = useQueryStore((s) => s.resultMode);

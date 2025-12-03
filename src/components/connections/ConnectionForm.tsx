@@ -1,8 +1,4 @@
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod/v4";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -20,14 +16,18 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useConnectionStore } from "@/stores/connectionStore";
 import {
   useCreateConnection,
-  useUpdateConnection,
   useTestConnection,
+  useUpdateConnection,
 } from "@/hooks/queries/useConnections";
+import { useConnectionStore } from "@/stores/connectionStore";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod/v4";
 
 const connectionSchema = z.object({
   name: z.string().min(1, "Name is required"),
