@@ -20,6 +20,9 @@ interface QueryState {
   tableResult: PaginatedResult | null;
   setTableResult: (result: PaginatedResult | null) => void;
 
+  // Prepare for new table view (clears old data)
+  prepareForTableView: () => void;
+
   // Pagination for table view
   currentPage: number;
   setCurrentPage: (page: number) => void;
@@ -66,10 +69,14 @@ export const useQueryStore = create<QueryState>((set) => ({
   tableResult: null,
   setTableResult: (result) => set({ tableResult: result, resultMode: "table" }),
 
+  // Prepare for new table view
+  prepareForTableView: () =>
+    set({ tableResult: null, resultMode: "table", currentPage: 1, error: null }),
+
   // Pagination
   currentPage: 1,
   setCurrentPage: (page) => set({ currentPage: page }),
-  pageSize: 50,
+  pageSize: 25,
   setPageSize: (size) => set({ pageSize: size, currentPage: 1 }),
 
   // Explain

@@ -80,7 +80,7 @@ export async function fetchTableData(
     schema,
     table,
     page,
-    page_size: pageSize,
+    pageSize, // Tauri will convert camelCase to snake_case automatically
   });
 }
 

@@ -61,7 +61,7 @@ export function LeftSidebar() {
   const selectedTable = useConnectionStore((s) => s.selectedTable);
   const setSelectedTable = useConnectionStore((s) => s.setSelectedTable);
   const openConnectionModal = useConnectionStore((s) => s.openConnectionModal);
-  const setCurrentPage = useQueryStore((s) => s.setCurrentPage);
+  const prepareForTableView = useQueryStore((s) => s.prepareForTableView);
 
   // Queries
   const { isLoading: isLoadingConnections } = useConnections();
@@ -105,8 +105,10 @@ export function LeftSidebar() {
   };
 
   const handleTableSelect = (table: TableInfo) => {
+    // Set the selected table first, then prepare the view state
+    // This ensures the query fetches data for the new table
     setSelectedTable({ schema: table.schema, name: table.name });
-    setCurrentPage(1);
+    prepareForTableView();
   };
 
   const handleConnect = (connectionId: string) => {

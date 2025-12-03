@@ -1,19 +1,24 @@
-import { useCallback, useEffect, useRef } from "react";
-import Editor, { type OnMount, type Monaco } from "@monaco-editor/react";
-import { Play, Search, Loader2, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useQueryStore } from "@/stores/queryStore";
-import { useConnectionStore } from "@/stores/connectionStore";
 import {
   useExecuteQuery,
   useExplainQuery,
   useSaveEditorContent,
 } from "@/hooks/queries/useQueries";
+import { useConnectionStore } from "@/stores/connectionStore";
+import { useQueryStore } from "@/stores/queryStore";
+import Editor, { type Monaco, type OnMount } from "@monaco-editor/react";
+import { Code2, Loader2, Play, Search } from "lucide-react";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 export function RightSidebar() {
   const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
+
+  // Refs for keyboard shortcuts to access latest state
+  const handleRunRef = useRef<(() => void) | null>(null);
+  const handleExplainRef = useRef<(() => void) | null>(null);
+  const hasConnectionRef = useRef<boolean>(false);
 
   // Store state
   const sql = useQueryStore((s) => s.sql);
@@ -22,11 +27,20 @@ export function RightSidebar() {
   const isExplaining = useQueryStore((s) => s.isExplaining);
   const error = useQueryStore((s) => s.error);
   const isConnected = useConnectionStore((s) => s.isConnected);
+  const activeConnectionId = useConnectionStore((s) => s.activeConnectionId);
+  
+  // Use activeConnectionId as fallback if isConnected is not synced
+  const hasConnection = isConnected || !!activeConnectionId;
 
   // Mutations
   const executeMutation = useExecuteQuery();
   const explainMutation = useExplainQuery();
   const saveContentMutation = useSaveEditorContent();
+
+  // Sync refs with current state
+  useEffect(() => {
+    hasConnectionRef.current = hasConnection;
+  }, [hasConnection]);
 
   // Auto-save editor content with debounce
   useEffect(() => {
@@ -43,17 +57,36 @@ export function RightSidebar() {
     editorRef.current = editor;
     monacoRef.current = monaco;
 
-    // Add keyboard shortcuts
+    // Add keyboard shortcuts - use refs to always access latest handlers
     editor.addCommand(
       // Cmd/Ctrl + Enter to run query
       monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
-      () => handleRun()
+      () => {
+        if (handleRunRef.current) {
+          handleRunRef.current();
+        }
+      }
+    );
+
+    // Add both Cmd+E and Cmd+Shift+E for Analyze
+    editor.addCommand(
+      // Cmd/Ctrl + E to explain
+      monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyE,
+      () => {
+        if (handleExplainRef.current) {
+          handleExplainRef.current();
+        }
+      }
     );
 
     editor.addCommand(
-      // Cmd/Ctrl + Shift + E to explain
+      // Cmd/Ctrl + Shift + E to explain (alternative)
       monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyE,
-      () => handleExplain()
+      () => {
+        if (handleExplainRef.current) {
+          handleExplainRef.current();
+        }
+      }
     );
   };
 
@@ -69,7 +102,7 @@ export function RightSidebar() {
   }, [sql]);
 
   const handleRun = useCallback(() => {
-    if (!isConnected) {
+    if (!hasConnectionRef.current) {
       toast.error("Not connected to any database");
       return;
     }
@@ -81,10 +114,10 @@ export function RightSidebar() {
     }
 
     executeMutation.mutate(queryToRun);
-  }, [isConnected, getSelectedOrAllSql, executeMutation]);
+  }, [getSelectedOrAllSql, executeMutation]);
 
   const handleExplain = useCallback(() => {
-    if (!isConnected) {
+    if (!hasConnectionRef.current) {
       toast.error("Not connected to any database");
       return;
     }
@@ -96,7 +129,13 @@ export function RightSidebar() {
     }
 
     explainMutation.mutate(queryToRun);
-  }, [isConnected, getSelectedOrAllSql, explainMutation]);
+  }, [getSelectedOrAllSql, explainMutation]);
+
+  // Sync handler refs with latest handlers
+  useEffect(() => {
+    handleRunRef.current = handleRun;
+    handleExplainRef.current = handleExplain;
+  }, [handleRun, handleExplain]);
 
   return (
     <div className="flex h-full flex-col bg-sidebar">
@@ -147,7 +186,7 @@ export function RightSidebar() {
       <div className="flex items-center gap-2 border-t border-sidebar-border p-3">
         <Button
           onClick={handleRun}
-          disabled={!isConnected || isExecuting}
+          disabled={!hasConnection || isExecuting}
           className="flex-1"
           size="sm"
         >
@@ -160,7 +199,7 @@ export function RightSidebar() {
         </Button>
         <Button
           onClick={handleExplain}
-          disabled={!isConnected || isExplaining}
+          disabled={!hasConnection || isExplaining}
           variant="secondary"
           className="flex-1"
           size="sm"
@@ -178,7 +217,7 @@ export function RightSidebar() {
       <div className="border-t border-sidebar-border px-4 py-2 text-center">
         <p className="text-[10px] text-muted-foreground">
           <kbd className="rounded bg-muted px-1">⌘ Enter</kbd> Run •{" "}
-          <kbd className="rounded bg-muted px-1">⌘ ⇧ E</kbd> Analyze
+          <kbd className="rounded bg-muted px-1">⌘ E</kbd> Analyze
         </p>
       </div>
     </div>

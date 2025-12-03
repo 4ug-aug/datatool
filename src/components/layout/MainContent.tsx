@@ -46,12 +46,17 @@ export function MainContent() {
 
   const selectedTable = useConnectionStore((s) => s.selectedTable);
   const isConnected = useConnectionStore((s) => s.isConnected);
+  const activeConnectionId = useConnectionStore((s) => s.activeConnectionId);
+
+  // Use activeConnectionId as fallback if isConnected is not synced
+  const hasConnection = isConnected || !!activeConnectionId;
 
   // Fetch table data when a table is selected
-  const { isLoading: isLoadingTable } = useTableData(
-    selectedTable?.schema || "",
-    selectedTable?.name || ""
-  );
+  const {
+    isLoading: isLoadingTable,
+    error: tableDataError,
+    isError: isTableDataError,
+  } = useTableData(selectedTable?.schema || "", selectedTable?.name || "");
 
   // Determine which data to display
   const displayData = useMemo(() => {
@@ -103,7 +108,7 @@ export function MainContent() {
   }
 
   // Empty state
-  if (!isConnected) {
+  if (!hasConnection) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 bg-background p-8">
         <Database className="size-16 text-muted-foreground/30" />
@@ -138,16 +143,24 @@ export function MainContent() {
     );
   }
 
-  // Error state
-  if (error && resultMode === "query") {
+  // Error state - show errors from both query execution and table data fetching
+  const displayError = error || (isTableDataError && tableDataError ? String(tableDataError) : null);
+  if (displayError && (resultMode === "query" || resultMode === "table")) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 bg-background p-8">
         <AlertCircle className="size-16 text-destructive/50" />
         <div className="max-w-md text-center">
-          <h3 className="text-lg font-medium text-foreground">Query Error</h3>
+          <h3 className="text-lg font-medium text-foreground">
+            {resultMode === "query" ? "Query Error" : "Table Data Error"}
+          </h3>
           <p className="mt-2 rounded-md bg-destructive/10 p-4 font-mono text-sm text-destructive">
-            {error}
+            {displayError}
           </p>
+          {selectedTable && resultMode === "table" && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Failed to load data from {selectedTable.schema}.{selectedTable.name}
+            </p>
+          )}
         </div>
       </div>
     );

@@ -16,6 +16,9 @@ export function useTables() {
   const isConnected = useConnectionStore((s) => s.isConnected);
   const setTables = useConnectionStore((s) => s.setTables);
 
+  // Use activeConnectionId as fallback if isConnected is not synced
+  const hasConnection = isConnected || !!activeConnectionId;
+
   return useQuery({
     queryKey: tableKeys.all(activeConnectionId),
     queryFn: async () => {
@@ -23,34 +26,54 @@ export function useTables() {
       setTables(tables);
       return tables;
     },
-    enabled: isConnected && !!activeConnectionId,
+    enabled: hasConnection && !!activeConnectionId,
   });
 }
 
 export function useColumns(schema: string, table: string) {
   const isConnected = useConnectionStore((s) => s.isConnected);
+  const activeConnectionId = useConnectionStore((s) => s.activeConnectionId);
+
+  // Use activeConnectionId as fallback if isConnected is not synced
+  const hasConnection = isConnected || !!activeConnectionId;
 
   return useQuery({
     queryKey: tableKeys.columns(schema, table),
     queryFn: () => fetchColumns(schema, table),
-    enabled: isConnected && !!schema && !!table,
+    enabled: hasConnection && !!schema && !!table,
   });
 }
 
 export function useTableData(schema: string, table: string) {
   const isConnected = useConnectionStore((s) => s.isConnected);
+  const activeConnectionId = useConnectionStore((s) => s.activeConnectionId);
   const currentPage = useQueryStore((s) => s.currentPage);
   const pageSize = useQueryStore((s) => s.pageSize);
   const setTableResult = useQueryStore((s) => s.setTableResult);
+  const setError = useQueryStore((s) => s.setError);
+
+  // Use activeConnectionId as fallback if isConnected is not synced
+  const hasConnection = isConnected || !!activeConnectionId;
 
   return useQuery({
     queryKey: tableKeys.data(schema, table, currentPage, pageSize),
     queryFn: async () => {
-      const result = await fetchTableData(schema, table, currentPage, pageSize);
-      setTableResult(result);
-      return result;
+      try {
+        setError(null);
+        const result = await fetchTableData(schema, table, currentPage, pageSize);
+        setTableResult(result);
+        return result;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        setError(errorMessage);
+        throw error;
+      }
     },
-    enabled: isConnected && !!schema && !!table,
+    enabled: hasConnection && !!schema && !!table,
+    // Always refetch on mount to ensure fresh data
+    refetchOnMount: true,
+    staleTime: 0,
+    retry: false, // Don't retry on error, show error immediately
   });
 }
 
