@@ -1,25 +1,13 @@
-import { useMemo, useEffect } from "react";
-import {
-  Bar,
-  BarChart,
-  Line,
-  LineChart,
-  Area,
-  AreaChart,
-  Pie,
-  PieChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Badge } from "@/components/ui/badge";
 import {
   ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
   ChartLegend,
   ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -27,19 +15,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { BarChart3, LineChart as LineChartIcon, PieChart as PieChartIcon, AreaChart as AreaChartIcon, AlertCircle, X } from "lucide-react";
-import { useQueryStore, type ChartType } from "@/stores/queryStore";
-import type { ColumnMeta } from "@/types";
 import {
+  autoDetectChartConfig,
   detectNumericColumns,
   detectXAxisColumns,
-  transformDataForChart,
-  autoDetectChartConfig,
   getChartColors,
   isDatetimeType,
+  transformDataForChart,
 } from "@/lib/chartUtils";
+import { useQueryStore, type ChartType } from "@/stores/queryStore";
+import type { ColumnMeta } from "@/types";
+import { AlertCircle, AreaChart as AreaChartIcon, BarChart3, LineChart as LineChartIcon, PieChart as PieChartIcon, X } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 interface DataVisualizerProps {
   columns: ColumnMeta[];
@@ -369,7 +369,7 @@ interface PieChartViewProps {
   yColumns: string[];
 }
 
-function PieChartView({ data, config, yColumns }: PieChartViewProps) {
+function PieChartView({ data, yColumns }: PieChartViewProps) {
   // For pie chart, we use the first Y column and group by X axis
   const yColumn = yColumns[0];
   if (!yColumn) return null;
